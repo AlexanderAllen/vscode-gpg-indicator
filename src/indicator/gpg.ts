@@ -121,6 +121,18 @@ function parseGpgKey(rawText: string): Array<GpgKeyInfo> {
     return infos;
 }
 
+function parseIdentities(rawText: string) {
+    // Match all non-revoked identities.
+    const identityPattern: RegExp = /(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)\n?)/gm;
+    let matchedIdentities: RegExpExecArray | null;
+    let identities: Array<IdentityRecord> = [];
+
+    while ((matchedIdentities = identityPattern.exec(rawText)) !== null) {
+        let identityRecord: IdentityRecord = (matchedIdentities?.groups) ? matchedIdentities.groups : {};
+        identities.push(identityRecord);
+    }
+}
+
 export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
     let outputs = await process.textSpawn('gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
