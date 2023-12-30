@@ -12,10 +12,16 @@
         "name": "Weida Hong",
         "url": "https://blog.bitisle.net"
     },
+    "contributors": [
+        {
+            "name": "Richard Allen",
+            "url": "https://www.linkedin.com/in/drupalista/"
+        }
+    ],
     "version": "0.7.2",
     "publisher": "wdhongtw",
     "engines": {
-        "vscode": "^1.73.0"
+        "vscode": "^1.85.0"
     },
     "categories": [
         "Other"
