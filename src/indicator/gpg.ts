@@ -143,6 +143,23 @@ function parseIdentities(rawText: string): Array<IdentityRecord> {
     return identities;
 }
 
+/**
+ * Get key information of all GPG key.
+ *
+ * Caller should cache the results from this function whenever possible.
+ *
+ * @returns key information
+ */
+export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
+    /**
+     * --fingerprint flag is given twice to get fingerprint of subkey
+     * --with-colon flag is given to get the key information in a more machine-readable manner
+     * For more information, see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
+     */
+    let keyInfoRaw: string = await process.textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+    return parseGpgKey(keyInfoRaw);
+}
+
 export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
     let outputs = await process.textSpawn('gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
