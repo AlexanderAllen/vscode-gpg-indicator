@@ -140,7 +140,7 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "lint": "eslint src --ext ts",
-        "watch": "tsc -watch -p ./"
+        "watch": "tsc --watch --project ./"
     },
     "devDependencies": {
         "@tsconfig/node20": "^20.1.2",
