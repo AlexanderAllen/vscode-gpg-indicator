@@ -16,5 +16,20 @@
       "request": "launch",
       "type": "extensionHost",
     },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Test Jest",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
+      "args": [
+        "-i"
+      ],
+      "preLaunchTask": "npm: build",
+      "internalConsoleOptions": "openOnSessionStart",
+      "outFiles": [
+        "${workspaceRoot}/dist/**/*"
+      ],
+    },
   ]
 }
