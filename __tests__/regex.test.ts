@@ -34,17 +34,23 @@ grp:::::::::49F3A130A449F00970YYYYYYZZZMOCKGRIPRECORD:
 
   })
 
-  test('Check record group capture against live GPG binary', async () => {
-    const gpgOutput: string = await textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+  /**
+   * Windows output comes with \r\n not \n
+   * Both the regexes that Weida and I did was against (Linux) \n and not (Windows) \r\n.
+   */
+  test('Windows OS: Check record group capture against live "gpg.exe" binary', async () => {
+    const gpgOutput: string = await textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+    console.log(gpgOutput);
 
     const records = parseKeyRecords(gpgOutput);
 
-    assert.equal(3, records.length, 'Results contain three matches.');
+    // Don't assume there's multiple keys in dynamic tests. Expect only one.
+    assert(records[0]?.KeyRecordType !== undefined, 'First match contains a key record');
+    assert.equal(records[0]?.fieldKeyType, 'pub', 'First key record is a pub record');
 
-    assert.equal(records[0]?.fieldKeyType, 'pub', 'First match is a pub record');
-    assert(records[0]?.FingerprintRecordType !== '', 'First match fingerprint record is captured');
-    assert(records[0]?.GripRecordType !== '', 'First match grip record is captured');
-    assert(records[0]?.IdentityRecordType !== '', 'First match identity record is captured');
+    assert(records[0]?.FingerprintRecordType !== undefined, 'First match fingerprint record is captured');
+    assert(records[0]?.GripRecordType !== undefined, 'First match grip record is captured');
+    assert(records[0]?.IdentityRecordType !== undefined, 'First match identity record is captured');
 
   })
 
