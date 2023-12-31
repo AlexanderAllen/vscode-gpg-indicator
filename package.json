@@ -140,16 +140,20 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "lint": "eslint src --ext ts",
-        "watch": "tsc --watch --project ./"
+        "watch": "tsc --watch --project ./",
+        "test": "jest"
     },
     "devDependencies": {
         "@tsconfig/node20": "^20.1.2",
+        "@types/jest": "^29.5.11",
         "@types/node": "^16.14.2",
         "@types/vscode": "^1.85.0",
         "@typescript-eslint/eslint-plugin": "^6.16.0",
         "@typescript-eslint/parser": "^6.16.0",
         "@vscode/l10n-dev": "^0.0.31",
         "eslint": "^8.56.0",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.1.1",
         "typescript": "^5.3.3"
     },
     "license": "MIT",
