@@ -35,16 +35,28 @@ grp:::::::::49F3A130A449F00970YYYYYYZZZMOCKGRIPRECORD:
   })
 
   /**
-   * Windows output comes with \r\n not \n
-   * Both the regexes that Weida and I did was against (Linux) \n and not (Windows) \r\n.
+   * Check regex breakage against Windows gpg.exe.
+   *
+   * Windows output comes with \r\n not \n. Both the original regex by Weida,
+   * and the extended regex I did were done on a Linux compabtible platform.
+   *
+   * After modifying the parseKeyRecords() regex to be cross-platform compatible
+   * I'm stoked to report this test is passing.
+   *
+   * Windows users with WSL might still want to use Windows native GPG binariesr
+   * for smart-card support, hence the need for cross-platform compatibility.
+   *
+   * @see https://stackoverflow.com/a/20056634/467453
+   * @see https://regex101.com/r/Gzbx96/1
+   *
+   * @todo This test does not check the type of host environment before running.
    */
   test('Windows OS: Check record group capture against live "gpg.exe" binary', async () => {
     const gpgOutput: string = await textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
-    console.log(gpgOutput);
 
     const records = parseKeyRecords(gpgOutput);
 
-    // Don't assume there's multiple keys in dynamic tests. Expect only one.
+    // Don't assume there's multiple keys present in the keychain, test only against one key record.
     assert(records[0]?.KeyRecordType !== undefined, 'First match contains a key record');
     assert.equal(records[0]?.fieldKeyType, 'pub', 'First key record is a pub record');
 
@@ -53,6 +65,5 @@ grp:::::::::49F3A130A449F00970YYYYYYZZZMOCKGRIPRECORD:
     assert(records[0]?.IdentityRecordType !== undefined, 'First match identity record is captured');
 
   })
-
 
 });
