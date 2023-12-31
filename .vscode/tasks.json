@@ -16,12 +16,17 @@
 			"isBackground": true,
 		},
 		{
+			"label": "npm: build",
+			"detail": "Run tsc compiler",
 			"type": "npm",
 			"script": "compile",
-			"group": "build",
-			"problemMatcher": [],
-			"label": "npm: compile",
-			"detail": "tsc -p ./"
-		}
+			"problemMatcher": [
+				"$tsc"
+			],
+      "group": {
+        "kind": "build",
+      },
+			"isBackground": false,
+		},
 	]
 }
