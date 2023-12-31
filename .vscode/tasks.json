@@ -1,0 +1,32 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "npm: watch",
+			"detail": "Run tsc compiler in watch mode",
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": [
+				"$tsc-watch"
+			],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+			"isBackground": true,
+		},
+		{
+			"label": "npm: build",
+			"detail": "Run tsc compiler",
+			"type": "npm",
+			"script": "compile",
+			"problemMatcher": [
+				"$tsc"
+			],
+      "group": {
+        "kind": "build",
+      },
+			"isBackground": false,
+		},
+	]
+}

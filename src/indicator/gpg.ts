@@ -121,6 +121,68 @@ function parseGpgKey(rawText: string): Array<GpgKeyInfo> {
     return infos;
 }
 
+export interface IdentityRecord {
+    IdentityRecordType?: string;
+    fieldIdentityID?: number;
+    fieldIdentityStatus?: string;
+    fieldIdentityComment?: string;
+    fieldIdentityCreated?: string;
+    fieldIdentityRest?: string;
+}
+
+function parseIdentities(rawText: string): Array<IdentityRecord> {
+    // Match all non-revoked identities.
+    const identityPattern: RegExp = /(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)\n?)/gm;
+    let matchedIdentities: RegExpExecArray | null;
+    let identities: Array<IdentityRecord> = [];
+
+    while ((matchedIdentities = identityPattern.exec(rawText)) !== null) {
+        let identityRecord: IdentityRecord = (matchedIdentities?.groups) ? matchedIdentities.groups : {};
+        identities.push(identityRecord);
+    }
+    return identities;
+}
+
+/**
+ * Parse GPG record fields usign a regular expression.
+ *
+ * @param rawText Raw GPG output.
+ *
+ * @returns [] Array of parsed GPG records.
+ */
+export function parseKeyRecords(rawText: string) {
+
+    const recordPattern = /(?<KeyRecordType>(?<fieldKeyType>pub|sub):(?<fieldKeyStatus>[^:]*):(?<fieldLength>[^:]*):(?<fieldPubKeyAlgo>[^:]*):(?<fieldKeyID>[^:]*):(?<fieldCreated>[^:]*):(?<fieldExpires>[^:]*):(?<fieldTrust>[^:]*):(?<fieldOwnerTrust>[^:]*):(?<fieldUserID>[^:]*):(?<fieldSigClass>[^:]*):(?<fieldCapability>[escaD?]+)\w*:(?:[^:]*:){4}(?<fieldCurveName>[^:]*):(?<fieldRest>[:\d]*)(?:\r\n|\n))(?<FingerprintRecordType>(?:fpr|fp2):(?:[^:]*:){8}(?<fingerprint>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<GripRecordType>grp:(?:[^:]*:){8}(?<grip>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)(\r\n|\n))*/mg;
+    let matchedIdentities;
+    const identities = [];
+
+    while ((matchedIdentities = recordPattern.exec(rawText)) !== null) {
+        identities.push(matchedIdentities?.groups);
+    }
+    return identities;
+}
+
+/**
+ * Get information of all GPG keys available.
+ *
+ * Caller should cache the results from this function whenever possible.
+ *
+ * --fingerprint flag is given twice to get fingerprint of subkey
+ * --with-colon flag is given to get the key information in a more machine-readable manner
+ *
+ * @returns key information
+ *
+ * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
+ */
+export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
+    const gpgOutput: string = await process.textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+
+    const identities = parseIdentities(gpgOutput);
+    const records = parseKeyRecords(gpgOutput);
+
+    return parseGpgKey(gpgOutput);
+}
+
 export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
     let outputs = await process.textSpawn('gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
@@ -144,24 +206,6 @@ export async function isKeyIdUnlocked(keyId: string): Promise<boolean> {
     const keyInfo = await getKeyInfo(keyId);
 
     return isKeyUnlocked(keyInfo.keygrip);
-}
-
-/**
- * Get key information of all GPG key.
- *
- * Caller should cache the results from this function whenever possible.
- *
- * @returns key information
- */
-
-export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
-    /**
-     * --fingerprint flag is given twice to get fingerprint of subkey
-     * --with-colon flag is given to get the key information in a more machine-readable manner
-     * For more information, see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
-     */
-    let keyInfoRaw: string = await process.textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
-    return parseGpgKey(keyInfoRaw);
 }
 
 /**
