@@ -8,8 +8,7 @@ import { m } from "./message";
 import { KeyRecord, isKeyUnlocked, getKeyInfos, getKeyInfo, unlockByKey } from './indicator/gpg';
 
 export class KeyStatusEvent {
-    constructor(public info: GpgKeyInfo, public isLocked: boolean) {
-    }
+    constructor(public info: KeyRecord, public isLocked: boolean) {}
 
     static equal(left: KeyStatusEvent, right: KeyStatusEvent): boolean {
         return left.info.fingerprint === right.info.fingerprint && left.isLocked === right.isLocked;
@@ -22,8 +21,8 @@ export default class KeyStatusManager {
     private activateFolder: string | undefined;
     private _activateFolder: string | undefined;
     private lastEvent: KeyStatusEvent | undefined;
-    private currentKey: GpgKeyInfo | undefined;
-    private keyOfFolders: Map<string, GpgKeyInfo> = new Map();
+    private currentKey: KeyRecord | undefined;
+    private keyOfFolders: Map<string, KeyRecord> = new Map();
     private disposed: boolean = false;
     private updateFunctions: ((event?: KeyStatusEvent) => void)[] = [];
     private isUnlocked = false;
@@ -195,7 +194,7 @@ export default class KeyStatusManager {
         await Promise.all(folders.map((folder) => this.updateFolder(folder, keyInfos)));
     }
 
-    private async updateFolder(folder: string, keyInfos?: GpgKeyInfo[]): Promise<void> {
+    private async updateFolder(folder: string, keyInfos?: KeyRecord[]): Promise<void> {
         await this.updateFolderLock.with(async () => {
             try {
                 const shouldParseKey = await git.isSigningActivated(folder);
@@ -204,7 +203,7 @@ export default class KeyStatusManager {
                 }
                 const keyId = await git.getSigningKey(folder);
                 const keyInfo = await gpg.getKeyInfo(keyId, keyInfos);
-                this.logger.info(`Find key ${keyInfo.fingerprint} for folder ${folder}`);
+                this.logger.info(`Found key ${keyInfo.fieldKeyID} (fingerprint ${keyInfo.fingerprint}) for directory ${folder}`);
                 this.keyOfFolders.set(folder, keyInfo);
             } catch (err) {
                 this.logger.warn(`Can not find key information for folder: ${folder}`);
@@ -242,7 +241,7 @@ export default class KeyStatusManager {
         this.updateFunctions.push(update);
     }
 
-    getCurrentKey(): GpgKeyInfo | undefined {
+    getCurrentKey(): KeyRecord | undefined {
         const currentKey = this.activateFolder ? this.keyOfFolders.get(this.activateFolder) : undefined;
         if (!currentKey) {
             return undefined;
