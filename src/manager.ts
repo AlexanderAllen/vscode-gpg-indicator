@@ -192,7 +192,7 @@ export default class KeyStatusManager {
     async updateFolders(folders: string[]): Promise<void> {
         this.logger.info('Update folder information');
         this.keyOfFolders.clear();
-        const keyInfos = await getKeyInfos();
+        const keyInfos = await getKeyInfos(this.env);
         await Promise.all(folders.map((folder) => this.updateFolder(folder, keyInfos)));
     }
 
@@ -204,7 +204,7 @@ export default class KeyStatusManager {
                     return;
                 }
                 const keyId = await git.getSigningKey(folder);
-                const keyInfo = await getKeyInfo(keyId, keyInfos);
+                const keyInfo = await getKeyInfo(this.env, keyId, keyInfos);
                 this.logger.info(`Found key ${keyInfo.fieldKeyID} (fingerprint ${keyInfo.fingerprint}) for directory ${folder}`);
                 this.keyOfFolders.set(folder, keyInfo);
             } catch (err) {
