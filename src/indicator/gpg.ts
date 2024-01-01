@@ -159,6 +159,7 @@ export class KeyRecord {
       public readonly fieldIdentityID: string = '',
       public readonly fieldIdentityComment: string = '',
       public readonly fieldIdentityRest: string = '',
+      public readonly userId: string = '',
     ) {}
 }
 
@@ -178,7 +179,12 @@ export function parseKeyRecords(rawText: string): Array<KeyRecord> {
     const records: Array<KeyRecord> = [];
 
     while ((matchedIdentities = recordPattern.exec(rawText)) !== null) {
-        const record: KeyRecord = Object.assign(new KeyRecord(), matchedIdentities.groups);
+        const record: KeyRecord = Object.assign(new KeyRecord(), {
+            ...matchedIdentities.groups,
+            // Combine and attach the captured identity record to the key record.
+            userID: (matchedIdentities.groups?.fieldIdentityID === undefined) ? '' :
+             `${matchedIdentities.groups?.fieldIdentityID} ${matchedIdentities.groups?.fieldIdentityComment}`,
+        });
         records.push(record);
     }
     return records;
