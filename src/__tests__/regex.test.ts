@@ -1,6 +1,6 @@
 import { strict as assert } from 'assert';
-import { parseKeyRecords } from '../src/indicator/gpg';
-import { textSpawn } from '../src/indicator/process';
+import { parseKeyRecords } from '../indicator/gpg';
+import { textSpawn } from '../indicator/process';
 
 describe('GPG records are captured', () => {
 
