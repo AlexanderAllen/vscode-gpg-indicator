@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import { l10n, window, workspace } from 'vscode';
 
 import * as git from './indicator/git';
 import * as process from './indicator/process';
@@ -62,9 +62,9 @@ export default class KeyStatusManager {
     }
 
     private show(isChanged: boolean, changedMsg: string, defaultMsg: string) {
-        vscode.window.showInformationMessage(isChanged
-            ? vscode.l10n.t(changedMsg)
-            : vscode.l10n.t(defaultMsg),
+        window.showInformationMessage(isChanged
+            ? l10n.t(changedMsg)
+            : l10n.t(defaultMsg),
         );
     }
 
@@ -246,11 +246,11 @@ export default class KeyStatusManager {
     // Lock or unlock current key
     async unlockCurrentKey(passphrase: string): Promise<void> {
         if (this.activateFolder === undefined) {
-            throw new Error(vscode.l10n.t(m['noActiveFolder']));
+            throw new Error(l10n.t(m['noActiveFolder']));
         }
 
         if (this.currentKey === undefined) {
-            throw new Error(vscode.l10n.t(m['noKeyForCurrentFolder']));
+            throw new Error(l10n.t(m['noKeyForCurrentFolder']));
         }
 
         if (await gpg.isKeyUnlocked(this.currentKey.keygrip)) {
