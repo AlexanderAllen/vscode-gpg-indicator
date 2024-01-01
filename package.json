@@ -114,17 +114,17 @@
                         "%gpgIndicator.l10n.configuration.statusStyle.enumDescriptions.userId%"
                     ]
                 },
-                "gpgIndicator.newlineInterpretation": {
+                "gpgIndicator.binaryHost": {
                     "type": "string",
                     "default": "linux",
-                    "description": "Determines how the output from the various GPG tools is interpreted.",
+                    "markdownDescription": "Determines which environment the GPG tools are located at.\n This setting also tells GPG Indicator how to interpret the output from GPG tools.",
+                    "markdownEnumDescriptions": [
+                        "GPG tools are installed in a Linux environment.\n GPG Indicator will execute native Linux commands.",
+                        "GPG tools are installed in a Windows environment.\n GPG Indicator will look for programs ending with a `.exe` extension."
+                    ],
                     "enum": [
                         "linux",
                         "windows"
-                    ],
-                    "enumDescriptions": [
-                        "Newlines from Linux environments is interpreted as '\\n'",
-                        "Newlines from Windows are interpreted as '\\r\\n'"
                     ]
                 }
             }
