@@ -27,6 +27,10 @@ export default class KeyStatusManager {
     private disposed: boolean = false;
     private updateFunctions: ((event?: KeyStatusEvent) => void)[] = [];
     private isUnlocked = false;
+    /**
+     * Determines binary execution style and line endings.
+     */
+    private env: binaryHostConfig;
 
     /**
      * Construct the key status manager.
@@ -44,6 +48,10 @@ export default class KeyStatusManager {
     ) {
         this.updateFolderLock = new Mutex();
         this.syncStatusLock = new Mutex();
+        this.env =
+            workspace.
+            getConfiguration('gpgIndicator').
+            get<binaryHostConfig>('binaryHost', 'linux');
     }
 
     async syncLoop(): Promise<void> {
