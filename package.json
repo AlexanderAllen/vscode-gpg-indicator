@@ -27,13 +27,6 @@
         "Other"
     ],
     "icon": "images/icon-color.png",
-    "activationEvents": [
-        "workspaceContains:/.git",
-        "onCommand:gpgIndicator.unlockCurrentKey",
-        "onCommand:gpgIndicator.deletePassphraseCache",
-        "onCommand:gpgIndicator.clearPassphraseCache",
-        "onCommand:gpgIndicator.listPassphraseCache"
-    ],
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "contributes": {
