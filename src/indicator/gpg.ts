@@ -86,34 +86,6 @@ async function sign(logger: Logger, socketPath: string, keygrip: string, passphr
     }
 }
 
-/**
- * Parse lots GPG key information from gpg command
- *
- * @param rawText - output string from gpg --fingerprint --fingerprint --with-keygrip --with-colon
- */
-function parseGpgKey(rawText: string): Array<GpgKeyInfo> {
-    /**
-     * group 1: pub or sub, 2: ability (E S C A), 3: fingerprint 4. keygrip
-     * For more information, see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
-     */
-    let pattern: RegExp = /(pub|sub):(?:[^:]*:){10}([escaD?]+)\w*:(?:[^:]*:)*?\n(?:fpr|fp2):(?:[^:]*:){8}(\w*):(?:[^:]*:)*?\ngrp:(?:[^:]*:){8}(\w*):(?:[^:]*:)*?(?:\nuid:(?:[^:]*:){8}([^:]*):(?:[^:]*:)*?)?/g;
-
-    let infos: Array<GpgKeyInfo> = [];
-    let matched: RegExpExecArray | null;
-    while ((matched = pattern.exec(rawText)) !== null) {
-        let info: GpgKeyInfo = {
-            type: matched[1],
-            capabilities: matched[2],
-            fingerprint: matched[3],
-            keygrip: matched[4],
-            userId: matched[5],
-        };
-        infos.push(info);
-    }
-
-    return infos;
-}
-
 function parseIdentities(rawText: string): Array<IdentityRecord> {
     // Match all non-revoked identities.
     const identityPattern: RegExp = /(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)\n?)/gm;
