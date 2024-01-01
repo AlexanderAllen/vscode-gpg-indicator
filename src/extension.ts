@@ -8,6 +8,7 @@ import { Logger } from "./indicator/logger";
 import KeyStatusManager from "./manager";
 import { Storage, KeyStatusEvent } from "./manager";
 import { m } from "./message";
+import { binaryHostConfig } from './common';
 
 type statusStyleEnum = "fingerprintWithUserId" | "fingerprint" | "userId";
 
@@ -34,7 +35,11 @@ async function generateKeyList(secretStorage: PassphraseStorage, keyStatusManage
         return false;
     }
     const items: vscode.QuickPickItem[] = [];
-    const keyInfos = await gpg.getKeyInfos();
+
+    const configuration = vscode.workspace.getConfiguration('gpgIndicator');
+    const env: binaryHostConfig = configuration.get<binaryHostConfig>('binaryHostConfig', binaryHostConfig.Linux);
+
+    const keyInfos = await gpg.getKeyInfos(env);
     const keyToUser = keyInfos.map(({ userId, fingerprint }): [string, string?] => [fingerprint, userId]);
     const withUsers = keyToUser.filter((pair): pair is [string, string] => pair[1] !== undefined);
     const keyList = new Map<string, string>(withUsers);

@@ -18,8 +18,3 @@ interface IdentityRecord {
   fieldIdentityCreated?: string;
   fieldIdentityRest?: string;
 }
-
-/**
- * Cnfiguration values for the `gpgIndicator.binaryHost option`.
- */
-type binaryHostConfig = "linux" | "windows";

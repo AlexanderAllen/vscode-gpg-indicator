@@ -4,7 +4,7 @@ import type { Logger } from './logger';
 import { binaryHostConfig } from '../common';
 
 /**
- * Immutable GPG record representation.
+ * Immutable GPG record type.
  */
 export class KeyRecord {
     constructor(
@@ -54,10 +54,9 @@ async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], inp
  *
  * @returns The path of desired GPG agent socket.
  */
-async function getSocketPath(): Promise<string> {
+async function getSocketPath(env: binaryHostConfig): Promise<string> {
     // TODO: Consider supporting other socket files rather than the default one.
-    const outputs = await process.textSpawn('gpgconf', ['--list-dir', 'agent-socket'], "");
-
+    const outputs = await exec(env, 'gpgconf', ['--list-dir', 'agent-socket'], '');
     return outputs.trim();
 }
 
@@ -245,8 +244,8 @@ const SHA1_EMPTY_DIGEST = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
  * @param keygrip - The keygrip of the key to be unlocked
  * @param passphrase - The passphrase for the key.
  */
-export async function unlockByKey(logger: Logger, keygrip: string, passphrase: string): Promise<void> {
-    const socketPath = await getSocketPath();
+export async function unlockByKey(env: binaryHostConfig, logger: Logger, keygrip: string, passphrase: string): Promise<void> {
+    const socketPath = await getSocketPath(env);
 
     // Hash value is not important here, the only requirement is the length of the hash value.
     await sign(logger, socketPath, keygrip, passphrase, SHA1_EMPTY_DIGEST);

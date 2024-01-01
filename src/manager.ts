@@ -268,7 +268,7 @@ export default class KeyStatusManager {
         }
 
         this.logger.info(`Try to unlock current key: ${this.currentKey.fingerprint}`);
-        await unlockByKey(this.logger, this.currentKey.grip, passphrase);
+        await unlockByKey(this.env, this.logger, this.currentKey.grip, passphrase);
     }
 
     // Stop sync key status loop
