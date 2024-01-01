@@ -113,6 +113,19 @@
                         "%gpgIndicator.l10n.configuration.statusStyle.enumDescriptions.fingerprint%",
                         "%gpgIndicator.l10n.configuration.statusStyle.enumDescriptions.userId%"
                     ]
+                },
+                "gpgIndicator.newlineInterpretation": {
+                    "type": "string",
+                    "default": "linux",
+                    "description": "Determines how the output from the various GPG tools is interpreted.",
+                    "enum": [
+                        "linux",
+                        "windows"
+                    ],
+                    "enumDescriptions": [
+                        "Newlines from Linux environments is interpreted as '\\n'",
+                        "Newlines from Windows are interpreted as '\\r\\n'"
+                    ]
                 }
             }
         }
