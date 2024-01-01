@@ -140,9 +140,13 @@ export class KeyRecord {
 /**
  * Parse GPG record fields usign a regular expression.
  *
+ * Expects output from command `gpg --fingerprint --fingerprint --with-keygrip --with-colon`
+ *
  * @param rawText Raw GPG output.
  *
  * @returns [] Array of parsed GPG records.
+ *
+ * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
 export function parseKeyRecords(rawText: string): Array<KeyRecord> {
     // GpgRecordType
