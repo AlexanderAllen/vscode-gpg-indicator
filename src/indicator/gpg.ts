@@ -231,12 +231,6 @@ export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
     return isUnlocked;
 }
 
-export async function isKeyIdUnlocked(keyId: string): Promise<boolean> {
-    const keyInfo = await getKeyInfo(keyId);
-
-    return isKeyUnlocked(keyInfo.keygrip);
-}
-
 /**
  * Get key information of given ID of GPG key.
  *
