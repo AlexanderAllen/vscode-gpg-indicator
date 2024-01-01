@@ -179,7 +179,7 @@ export function parseKeyRecords(rawText: string): Array<KeyRecord> {
  *
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
-export async function getKeyInfos(): Promise<KeyRecord[]> {
+export async function getKeyInfos(env: binaryHostConfig): Promise<KeyRecord[]> {
     // @todo @AlexanderAllen issue #8: config option for executable.
     const gpgOutput: string = await process.textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
     const records = parseKeyRecords(gpgOutput);
@@ -231,8 +231,8 @@ export async function isKeyUnlocked(env: binaryHostConfig, keygrip: string): Pro
  * @param keyInfos - If caller already had the cache, the cache should be passed to avoid duplicated `getKeyInfos()`
  * @returns key information
  */
-export async function getKeyInfo(keyId: string, keyInfos?: KeyRecord[]): Promise<KeyRecord> {
-    for (let info of (Array.isArray(keyInfos) ? keyInfos : await getKeyInfos())) {
+export async function getKeyInfo(env: binaryHostConfig, keyId: string, keyInfos?: KeyRecord[]): Promise<KeyRecord> {
+    for (let info of (Array.isArray(keyInfos) ? keyInfos : await getKeyInfos(env))) {
         // GPG signing key is usually given as shorter ID
         if (info.fingerprint.includes(keyId)) {
             return info;
