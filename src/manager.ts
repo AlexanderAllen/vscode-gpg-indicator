@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
 import * as git from './indicator/git';
-import * as gpg from './indicator/gpg';
 import * as process from './indicator/process';
 import type { Logger } from './indicator/logger';
 import { Mutex } from "./indicator/locker";
 import { m } from "./message";
+import { KeyRecord, isKeyUnlocked, getKeyInfos, getKeyInfo, unlockByKey } from './indicator/gpg';
 
 export class KeyStatusEvent {
     constructor(public info: GpgKeyInfo, public isLocked: boolean) {
