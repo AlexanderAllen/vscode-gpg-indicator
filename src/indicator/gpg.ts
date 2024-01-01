@@ -113,15 +113,6 @@ function parseGpgKey(rawText: string): Array<GpgKeyInfo> {
     return infos;
 }
 
-export interface IdentityRecord {
-    IdentityRecordType?: string;
-    fieldIdentityID?: number;
-    fieldIdentityStatus?: string;
-    fieldIdentityComment?: string;
-    fieldIdentityCreated?: string;
-    fieldIdentityRest?: string;
-}
-
 function parseIdentities(rawText: string): Array<IdentityRecord> {
     // Match all non-revoked identities.
     const identityPattern: RegExp = /(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)\n?)/gm;
