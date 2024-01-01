@@ -129,7 +129,7 @@ export default class KeyStatusManager {
      * @returns whether the key is unlocked after trying
      */
     private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
-        const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
+        const isUnlocked = await isKeyUnlocked(keyInfo.grip);
         if (isUnlocked) {
             return true;
         }
@@ -159,7 +159,7 @@ export default class KeyStatusManager {
             }
         }
 
-        return await gpg.isKeyUnlocked(keyInfo.keygrip);
+        return await isKeyUnlocked(keyInfo.grip);
     }
 
     /**
@@ -169,7 +169,7 @@ export default class KeyStatusManager {
      * @returns whether the key is unlocked
      */
     private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
-        const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
+        const isUnlocked = await isKeyUnlocked(keyInfo.grip);
         if (isUnlockedPrev && !isUnlocked) {
             this.show(isChanged, m['keyChanged'], m['keyRelocked']);
         }
@@ -190,7 +190,7 @@ export default class KeyStatusManager {
     async updateFolders(folders: string[]): Promise<void> {
         this.logger.info('Update folder information');
         this.keyOfFolders.clear();
-        const keyInfos = await gpg.getKeyInfos();
+        const keyInfos = await getKeyInfos();
         await Promise.all(folders.map((folder) => this.updateFolder(folder, keyInfos)));
     }
 
@@ -202,7 +202,7 @@ export default class KeyStatusManager {
                     return;
                 }
                 const keyId = await git.getSigningKey(folder);
-                const keyInfo = await gpg.getKeyInfo(keyId, keyInfos);
+                const keyInfo = await getKeyInfo(keyId, keyInfos);
                 this.logger.info(`Found key ${keyInfo.fieldKeyID} (fingerprint ${keyInfo.fingerprint}) for directory ${folder}`);
                 this.keyOfFolders.set(folder, keyInfo);
             } catch (err) {
@@ -260,13 +260,13 @@ export default class KeyStatusManager {
             throw new Error(l10n.t(m['noKeyForCurrentFolder']));
         }
 
-        if (await gpg.isKeyUnlocked(this.currentKey.keygrip)) {
+        if (await isKeyUnlocked(this.currentKey.grip)) {
             this.logger.warn(`Key is already unlocked, skip unlock request`);
             return;
         }
 
         this.logger.info(`Try to unlock current key: ${this.currentKey.fingerprint}`);
-        await gpg.unlockByKey(this.logger, this.currentKey.keygrip, passphrase);
+        await unlockByKey(this.logger, this.currentKey.grip, passphrase);
     }
 
     // Stop sync key status loop
