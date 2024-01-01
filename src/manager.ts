@@ -6,6 +6,7 @@ import type { Logger } from './indicator/logger';
 import { Mutex } from "./indicator/locker";
 import { m } from "./message";
 import { KeyRecord, isKeyUnlocked, getKeyInfos, getKeyInfo, unlockByKey } from './indicator/gpg';
+import { binaryHostConfig } from './common'
 
 export class KeyStatusEvent {
     constructor(public info: KeyRecord, public isLocked: boolean) {}
@@ -13,11 +14,6 @@ export class KeyStatusEvent {
     static equal(left: KeyStatusEvent, right: KeyStatusEvent): boolean {
         return left.info.fingerprint === right.info.fingerprint && left.isLocked === right.isLocked;
     }
-}
-
-enum binaryHostConfig {
-    LINUX = 'linux',
-    WINDOWS = 'windows'
 }
 
 
@@ -56,7 +52,7 @@ export default class KeyStatusManager {
         this.env =
             workspace.
             getConfiguration('gpgIndicator').
-            get<binaryHostConfig>('binaryHost', binaryHostConfig.LINUX);
+            get<binaryHostConfig>('binaryHost', binaryHostConfig.Linux);
     }
 
     async syncLoop(): Promise<void> {
@@ -135,7 +131,7 @@ export default class KeyStatusManager {
      * @returns whether the key is unlocked after trying
      */
     private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
-        const isUnlocked = await isKeyUnlocked(keyInfo.grip);
+        const isUnlocked = await isKeyUnlocked(this.env, keyInfo.grip);
         if (isUnlocked) {
             return true;
         }
@@ -165,7 +161,7 @@ export default class KeyStatusManager {
             }
         }
 
-        return await isKeyUnlocked(keyInfo.grip);
+        return await isKeyUnlocked(this.env, keyInfo.grip);
     }
 
     /**
@@ -175,7 +171,7 @@ export default class KeyStatusManager {
      * @returns whether the key is unlocked
      */
     private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
-        const isUnlocked = await isKeyUnlocked(keyInfo.grip);
+        const isUnlocked = await isKeyUnlocked(this.env, keyInfo.grip);
         if (isUnlockedPrev && !isUnlocked) {
             this.show(isChanged, m['keyChanged'], m['keyRelocked']);
         }
@@ -266,7 +262,7 @@ export default class KeyStatusManager {
             throw new Error(l10n.t(m['noKeyForCurrentFolder']));
         }
 
-        if (await isKeyUnlocked(this.currentKey.grip)) {
+        if (await isKeyUnlocked(this.env, this.currentKey.grip)) {
             this.logger.warn(`Key is already unlocked, skip unlock request`);
             return;
         }

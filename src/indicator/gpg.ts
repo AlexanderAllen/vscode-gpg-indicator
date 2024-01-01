@@ -212,10 +212,19 @@ export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
     return parseGpgKey(gpgOutput);
 }
 
-export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
-    let outputs = await process.textSpawn('gpg-connect-agent', [], `KEYINFO ${keygrip}`);
+/**
+ * Asks the current GPG agent whether the specified key `keygrip` is unlocked.
+ *
+ * @returns Promise<boolean>
+ *   Whether the key is unlocked or not.
+ */
+export async function isKeyUnlocked(env: binaryHostConfig, keygrip: string): Promise<boolean> {
 
-    let lines = outputs.split("\n");
+    const outputs = await process.textSpawn(
+        'gpg-connect-agent' + (env == 'linux' ? '' : '.exe'),
+        [], `KEYINFO ${keygrip}`);
+
+    const lines = outputs.split(env == 'linux' ? '\n' : '\r\n');
     if (lines.length === 1) {
         throw new Error(lines[0]);
     }
