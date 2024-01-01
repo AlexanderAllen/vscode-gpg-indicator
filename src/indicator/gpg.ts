@@ -200,9 +200,7 @@ async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], inp
  */
 export async function isKeyUnlocked(env: binaryHostConfig, keygrip: string): Promise<boolean> {
 
-    const outputs = await process.textSpawn(
-        'gpg-connect-agent' + (env == 'linux' ? '' : '.exe'),
-        [], `KEYINFO ${keygrip}`);
+    const outputs = await exec(env, 'gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
     const lines = outputs.split(env == 'linux' ? '\n' : '\r\n');
     if (lines.length === 1) {
