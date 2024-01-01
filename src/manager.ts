@@ -8,7 +8,7 @@ import { Mutex } from "./indicator/locker";
 import { m } from "./message";
 
 export class KeyStatusEvent {
-    constructor(public info: gpg.GpgKeyInfo, public isLocked: boolean) {
+    constructor(public info: GpgKeyInfo, public isLocked: boolean) {
     }
 
     static equal(left: KeyStatusEvent, right: KeyStatusEvent): boolean {
@@ -22,8 +22,8 @@ export default class KeyStatusManager {
     private activateFolder: string | undefined;
     private _activateFolder: string | undefined;
     private lastEvent: KeyStatusEvent | undefined;
-    private currentKey: gpg.GpgKeyInfo | undefined;
-    private keyOfFolders: Map<string, gpg.GpgKeyInfo> = new Map();
+    private currentKey: GpgKeyInfo | undefined;
+    private keyOfFolders: Map<string, GpgKeyInfo> = new Map();
     private disposed: boolean = false;
     private updateFunctions: ((event?: KeyStatusEvent) => void)[] = [];
     private isUnlocked = false;
@@ -121,7 +121,7 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked after trying
      */
-    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: gpg.GpgKeyInfo): Promise<boolean> {
+    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: GpgKeyInfo): Promise<boolean> {
         const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
         if (isUnlocked) {
             return true;
@@ -161,7 +161,7 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked
      */
-    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: gpg.GpgKeyInfo): Promise<boolean> {
+    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: GpgKeyInfo): Promise<boolean> {
         const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
         if (isUnlockedPrev && !isUnlocked) {
             this.show(isChanged, m['keyChanged'], m['keyRelocked']);
@@ -187,7 +187,7 @@ export default class KeyStatusManager {
         await Promise.all(folders.map((folder) => this.updateFolder(folder, keyInfos)));
     }
 
-    private async updateFolder(folder: string, keyInfos?: gpg.GpgKeyInfo[]): Promise<void> {
+    private async updateFolder(folder: string, keyInfos?: GpgKeyInfo[]): Promise<void> {
         await this.updateFolderLock.with(async () => {
             try {
                 const shouldParseKey = await git.isSigningActivated(folder);
@@ -234,7 +234,7 @@ export default class KeyStatusManager {
         this.updateFunctions.push(update);
     }
 
-    getCurrentKey(): gpg.GpgKeyInfo | undefined {
+    getCurrentKey(): GpgKeyInfo | undefined {
         const currentKey = this.activateFolder ? this.keyOfFolders.get(this.activateFolder) : undefined;
         if (!currentKey) {
             return undefined;

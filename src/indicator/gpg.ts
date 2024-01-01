@@ -2,14 +2,6 @@ import * as process from './process';
 import * as assuan from './assuan';
 import type { Logger } from './logger';
 
-export interface GpgKeyInfo {
-    type: string;
-    capabilities: string;
-    fingerprint: string;
-    keygrip: string;
-    userId?: string;
-}
-
 /**
  * Get the path of socket file for communication with GPG agent.
  *
