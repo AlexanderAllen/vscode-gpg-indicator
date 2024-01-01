@@ -141,7 +141,7 @@
         "compile": "tsc --project ./",
         "lint": "eslint src --ext ts",
         "watch": "tsc --watch --project ./",
-        "test": "jest"
+        "test": "npm run compile && jest"
     },
     "devDependencies": {
         "@tsconfig/node20": "^20.1.2",
