@@ -1,13 +1,52 @@
 import * as process from './process';
 import * as assuan from './assuan';
 import type { Logger } from './logger';
+import { binaryHostConfig } from '../common';
 
-export interface GpgKeyInfo {
-    type: string;
-    capabilities: string;
-    fingerprint: string;
-    keygrip: string;
-    userId?: string;
+/**
+ * Immutable GPG record type.
+ */
+export class KeyRecord {
+    constructor(
+      public readonly KeyRecordType: string = '',
+      public readonly fieldKeyType: string= '',
+      public readonly fieldKeyStatus: string = '',
+      public readonly fieldLength: string = '',
+      public readonly fieldPubKeyAlgo: string = '',
+      public readonly fieldKeyID: string = '',
+      public readonly fieldCreated: string = '',
+      public readonly fieldExpires: string = '',
+      public readonly fieldTrust: string = '',
+      public readonly fieldOwnerTrust: string = '',
+      public readonly fieldUserID: string = '',
+      public readonly fieldSigClass: string = '',
+      public readonly fieldCapability: string = '',
+      public readonly fieldCurveName: string = '',
+      public readonly fieldRest: string = '',
+
+      public readonly FingerprintRecordType: string = '',
+      public readonly fingerprint: string = '',
+
+      public readonly GripRecordType: string = '',
+      public readonly grip: string = '',
+
+      public readonly IdentityRecordType: string = '',
+      public readonly fieldIdentityStatus: string = '',
+      public readonly fieldIdentityCreated: string = '',
+      public readonly fieldIdentityID: string = '',
+      public readonly fieldIdentityComment: string = '',
+      public readonly fieldIdentityRest: string = '',
+      public readonly userId: string = '',
+    ) {}
+}
+
+/**
+ * Executes `process.textSpawn` in a cross-platform compatible manner.
+ */
+async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], input: string = ''): Promise<string> {
+    const target = cmd + (env == 'linux' ? '' : '.exe');
+    const result: string = await process.textSpawn(target, args, input);
+    return result;
 }
 
 /**
@@ -15,10 +54,9 @@ export interface GpgKeyInfo {
  *
  * @returns The path of desired GPG agent socket.
  */
-async function getSocketPath(): Promise<string> {
+async function getSocketPath(env: binaryHostConfig): Promise<string> {
     // TODO: Consider supporting other socket files rather than the default one.
-    const outputs = await process.textSpawn('gpgconf', ['--list-dir', 'agent-socket'], "");
-
+    const outputs = await exec(env, 'gpgconf', ['--list-dir', 'agent-socket'], '');
     return outputs.trim();
 }
 
@@ -93,43 +131,6 @@ async function sign(logger: Logger, socketPath: string, keygrip: string, passphr
     }
 }
 
-/**
- * Parse lots GPG key information from gpg command
- *
- * @param rawText - output string from gpg --fingerprint --fingerprint --with-keygrip --with-colon
- */
-function parseGpgKey(rawText: string): Array<GpgKeyInfo> {
-    /**
-     * group 1: pub or sub, 2: ability (E S C A), 3: fingerprint 4. keygrip
-     * For more information, see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
-     */
-    let pattern: RegExp = /(pub|sub):(?:[^:]*:){10}([escaD?]+)\w*:(?:[^:]*:)*?\n(?:fpr|fp2):(?:[^:]*:){8}(\w*):(?:[^:]*:)*?\ngrp:(?:[^:]*:){8}(\w*):(?:[^:]*:)*?(?:\nuid:(?:[^:]*:){8}([^:]*):(?:[^:]*:)*?)?/g;
-
-    let infos: Array<GpgKeyInfo> = [];
-    let matched: RegExpExecArray | null;
-    while ((matched = pattern.exec(rawText)) !== null) {
-        let info: GpgKeyInfo = {
-            type: matched[1],
-            capabilities: matched[2],
-            fingerprint: matched[3],
-            keygrip: matched[4],
-            userId: matched[5],
-        };
-        infos.push(info);
-    }
-
-    return infos;
-}
-
-export interface IdentityRecord {
-    IdentityRecordType?: string;
-    fieldIdentityID?: number;
-    fieldIdentityStatus?: string;
-    fieldIdentityComment?: string;
-    fieldIdentityCreated?: string;
-    fieldIdentityRest?: string;
-}
-
 function parseIdentities(rawText: string): Array<IdentityRecord> {
     // Match all non-revoked identities.
     const identityPattern: RegExp = /(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)\n?)/gm;
@@ -146,20 +147,29 @@ function parseIdentities(rawText: string): Array<IdentityRecord> {
 /**
  * Parse GPG record fields usign a regular expression.
  *
+ * Expects output from command `gpg --fingerprint --fingerprint --with-keygrip --with-colon`
+ *
  * @param rawText Raw GPG output.
  *
  * @returns [] Array of parsed GPG records.
+ *
+ * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
-export function parseKeyRecords(rawText: string) {
-
+export function parseKeyRecords(rawText: string): Array<KeyRecord> {
     const recordPattern = /(?<KeyRecordType>(?<fieldKeyType>pub|sub):(?<fieldKeyStatus>[^:]*):(?<fieldLength>[^:]*):(?<fieldPubKeyAlgo>[^:]*):(?<fieldKeyID>[^:]*):(?<fieldCreated>[^:]*):(?<fieldExpires>[^:]*):(?<fieldTrust>[^:]*):(?<fieldOwnerTrust>[^:]*):(?<fieldUserID>[^:]*):(?<fieldSigClass>[^:]*):(?<fieldCapability>[escaD?]+)\w*:(?:[^:]*:){4}(?<fieldCurveName>[^:]*):(?<fieldRest>[:\d]*)(?:\r\n|\n))(?<FingerprintRecordType>(?:fpr|fp2):(?:[^:]*:){8}(?<fingerprint>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<GripRecordType>grp:(?:[^:]*:){8}(?<grip>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)(\r\n|\n))*/mg;
     let matchedIdentities;
-    const identities = [];
+    const records: Array<KeyRecord> = [];
 
     while ((matchedIdentities = recordPattern.exec(rawText)) !== null) {
-        identities.push(matchedIdentities?.groups);
+        const record: KeyRecord = Object.assign(new KeyRecord(), {
+            ...matchedIdentities.groups,
+            // Combine and attach the captured identity record to the key record.
+            userID: (matchedIdentities.groups?.fieldIdentityID === undefined) ? '' :
+             `${matchedIdentities.groups?.fieldIdentityID} ${matchedIdentities.groups?.fieldIdentityComment}`,
+        });
+        records.push(record);
     }
-    return identities;
+    return records;
 }
 
 /**
@@ -174,19 +184,22 @@ export function parseKeyRecords(rawText: string) {
  *
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
-export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
-    const gpgOutput: string = await process.textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
-
-    const identities = parseIdentities(gpgOutput);
+export async function getKeyInfos(env: binaryHostConfig): Promise<KeyRecord[]> {
+    const gpgOutput = await exec(env, 'gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
     const records = parseKeyRecords(gpgOutput);
-
-    return parseGpgKey(gpgOutput);
+    return records;
 }
 
-export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
-    let outputs = await process.textSpawn('gpg-connect-agent', [], `KEYINFO ${keygrip}`);
+/**
+ * Asks the current GPG agent whether the specified key `keygrip` is unlocked.
+ *
+ * @returns Promise<boolean>
+ *   Whether the key is unlocked or not.
+ */
+export async function isKeyUnlocked(env: binaryHostConfig, keygrip: string): Promise<boolean> {
+    const outputs = await exec(env, 'gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
-    let lines = outputs.split("\n");
+    const lines = outputs.split(env == 'linux' ? '\n' : '\r\n');
     if (lines.length === 1) {
         throw new Error(lines[0]);
     }
@@ -202,12 +215,6 @@ export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
     return isUnlocked;
 }
 
-export async function isKeyIdUnlocked(keyId: string): Promise<boolean> {
-    const keyInfo = await getKeyInfo(keyId);
-
-    return isKeyUnlocked(keyInfo.keygrip);
-}
-
 /**
  * Get key information of given ID of GPG key.
  *
@@ -217,8 +224,8 @@ export async function isKeyIdUnlocked(keyId: string): Promise<boolean> {
  * @param keyInfos - If caller already had the cache, the cache should be passed to avoid duplicated `getKeyInfos()`
  * @returns key information
  */
-export async function getKeyInfo(keyId: string, keyInfos?: GpgKeyInfo[]): Promise<GpgKeyInfo> {
-    for (let info of (Array.isArray(keyInfos) ? keyInfos : await getKeyInfos())) {
+export async function getKeyInfo(env: binaryHostConfig, keyId: string, keyInfos?: KeyRecord[]): Promise<KeyRecord> {
+    for (let info of (Array.isArray(keyInfos) ? keyInfos : await getKeyInfos(env))) {
         // GPG signing key is usually given as shorter ID
         if (info.fingerprint.includes(keyId)) {
             return info;
@@ -237,8 +244,8 @@ const SHA1_EMPTY_DIGEST = "da39a3ee5e6b4b0d3255bfef95601890afd80709";
  * @param keygrip - The keygrip of the key to be unlocked
  * @param passphrase - The passphrase for the key.
  */
-export async function unlockByKey(logger: Logger, keygrip: string, passphrase: string): Promise<void> {
-    const socketPath = await getSocketPath();
+export async function unlockByKey(env: binaryHostConfig, logger: Logger, keygrip: string, passphrase: string): Promise<void> {
+    const socketPath = await getSocketPath(env);
 
     // Hash value is not important here, the only requirement is the length of the hash value.
     await sign(logger, socketPath, keygrip, passphrase, SHA1_EMPTY_DIGEST);

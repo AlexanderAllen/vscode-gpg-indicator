@@ -18,7 +18,7 @@
             "url": "https://www.linkedin.com/in/drupalista/"
         }
     ],
-    "version": "0.7.2",
+    "version": "0.8.0",
     "publisher": "wdhongtw",
     "engines": {
         "vscode": "^1.85.0"
@@ -27,13 +27,6 @@
         "Other"
     ],
     "icon": "images/icon-color.png",
-    "activationEvents": [
-        "workspaceContains:/.git",
-        "onCommand:gpgIndicator.unlockCurrentKey",
-        "onCommand:gpgIndicator.deletePassphraseCache",
-        "onCommand:gpgIndicator.clearPassphraseCache",
-        "onCommand:gpgIndicator.listPassphraseCache"
-    ],
     "main": "./dist/extension.js",
     "l10n": "./l10n",
     "contributes": {
@@ -87,8 +80,8 @@
             "properties": {
                 "gpgIndicator.statusRefreshInterval": {
                     "type": "number",
-                    "default": 30,
-                    "minimum": 1,
+                    "default": 60,
+                    "minimum": 15,
                     "markdownDescription": "%gpgIndicator.l10n.configuration.statusRefreshInterval%"
                 },
                 "gpgIndicator.outputLogLevel": {
@@ -120,6 +113,19 @@
                         "%gpgIndicator.l10n.configuration.statusStyle.enumDescriptions.fingerprint%",
                         "%gpgIndicator.l10n.configuration.statusStyle.enumDescriptions.userId%"
                     ]
+                },
+                "gpgIndicator.binaryHost": {
+                    "type": "string",
+                    "default": "linux",
+                    "markdownDescription": "Determines which environment the GPG tools are located at.\n This setting also tells GPG Indicator how to interpret the output from GPG tools.",
+                    "markdownEnumDescriptions": [
+                        "GPG tools are installed in a Linux environment.\n GPG Indicator will execute native Linux commands.",
+                        "GPG tools are installed in a Windows environment.\n GPG Indicator will look for programs ending with a `.exe` extension."
+                    ],
+                    "enum": [
+                        "linux",
+                        "windows"
+                    ]
                 }
             }
         }
@@ -141,7 +147,7 @@
         "compile": "tsc --project ./",
         "lint": "eslint src --ext ts",
         "watch": "tsc --watch --project ./",
-        "test": "jest"
+        "test": "npm run compile && jest"
     },
     "devDependencies": {
         "@tsconfig/node20": "^20.1.2",

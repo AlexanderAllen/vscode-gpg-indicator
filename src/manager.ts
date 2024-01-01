@@ -1,20 +1,21 @@
-import * as vscode from 'vscode';
+import { l10n, window, workspace } from 'vscode';
 
 import * as git from './indicator/git';
-import * as gpg from './indicator/gpg';
 import * as process from './indicator/process';
 import type { Logger } from './indicator/logger';
 import { Mutex } from "./indicator/locker";
 import { m } from "./message";
+import { KeyRecord, isKeyUnlocked, getKeyInfos, getKeyInfo, unlockByKey } from './indicator/gpg';
+import { binaryHostConfig } from './common'
 
 export class KeyStatusEvent {
-    constructor(public info: gpg.GpgKeyInfo, public isLocked: boolean) {
-    }
+    constructor(public info: KeyRecord, public isLocked: boolean) {}
 
     static equal(left: KeyStatusEvent, right: KeyStatusEvent): boolean {
         return left.info.fingerprint === right.info.fingerprint && left.isLocked === right.isLocked;
     }
 }
+
 
 export default class KeyStatusManager {
     private updateFolderLock: Mutex;
@@ -22,11 +23,15 @@ export default class KeyStatusManager {
     private activateFolder: string | undefined;
     private _activateFolder: string | undefined;
     private lastEvent: KeyStatusEvent | undefined;
-    private currentKey: gpg.GpgKeyInfo | undefined;
-    private keyOfFolders: Map<string, gpg.GpgKeyInfo> = new Map();
+    private currentKey: KeyRecord | undefined;
+    private keyOfFolders: Map<string, KeyRecord> = new Map();
     private disposed: boolean = false;
     private updateFunctions: ((event?: KeyStatusEvent) => void)[] = [];
     private isUnlocked = false;
+    /**
+     * Determines binary execution style and line endings.
+     */
+    private env: binaryHostConfig;
 
     /**
      * Construct the key status manager.
@@ -44,6 +49,10 @@ export default class KeyStatusManager {
     ) {
         this.updateFolderLock = new Mutex();
         this.syncStatusLock = new Mutex();
+        this.env =
+            workspace.
+            getConfiguration('gpgIndicator').
+            get<binaryHostConfig>('binaryHost', binaryHostConfig.Linux);
     }
 
     async syncLoop(): Promise<void> {
@@ -62,9 +71,9 @@ export default class KeyStatusManager {
     }
 
     private show(isChanged: boolean, changedMsg: string, defaultMsg: string) {
-        vscode.window.showInformationMessage(isChanged
-            ? vscode.l10n.t(changedMsg)
-            : vscode.l10n.t(defaultMsg),
+        window.showInformationMessage(isChanged
+            ? l10n.t(changedMsg)
+            : l10n.t(defaultMsg),
         );
     }
 
@@ -121,8 +130,8 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked after trying
      */
-    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: gpg.GpgKeyInfo): Promise<boolean> {
-        const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
+    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
+        const isUnlocked = await isKeyUnlocked(this.env, keyInfo.grip);
         if (isUnlocked) {
             return true;
         }
@@ -152,7 +161,7 @@ export default class KeyStatusManager {
             }
         }
 
-        return await gpg.isKeyUnlocked(keyInfo.keygrip);
+        return await isKeyUnlocked(this.env, keyInfo.grip);
     }
 
     /**
@@ -161,8 +170,8 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked
      */
-    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: gpg.GpgKeyInfo): Promise<boolean> {
-        const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
+    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
+        const isUnlocked = await isKeyUnlocked(this.env, keyInfo.grip);
         if (isUnlockedPrev && !isUnlocked) {
             this.show(isChanged, m['keyChanged'], m['keyRelocked']);
         }
@@ -183,11 +192,11 @@ export default class KeyStatusManager {
     async updateFolders(folders: string[]): Promise<void> {
         this.logger.info('Update folder information');
         this.keyOfFolders.clear();
-        const keyInfos = await gpg.getKeyInfos();
+        const keyInfos = await getKeyInfos(this.env);
         await Promise.all(folders.map((folder) => this.updateFolder(folder, keyInfos)));
     }
 
-    private async updateFolder(folder: string, keyInfos?: gpg.GpgKeyInfo[]): Promise<void> {
+    private async updateFolder(folder: string, keyInfos?: KeyRecord[]): Promise<void> {
         await this.updateFolderLock.with(async () => {
             try {
                 const shouldParseKey = await git.isSigningActivated(folder);
@@ -195,8 +204,8 @@ export default class KeyStatusManager {
                     return;
                 }
                 const keyId = await git.getSigningKey(folder);
-                const keyInfo = await gpg.getKeyInfo(keyId, keyInfos);
-                this.logger.info(`Find key ${keyInfo.fingerprint} for folder ${folder}`);
+                const keyInfo = await getKeyInfo(this.env, keyId, keyInfos);
+                this.logger.info(`Found key ${keyInfo.fieldKeyID} (fingerprint ${keyInfo.fingerprint}) for directory ${folder}`);
                 this.keyOfFolders.set(folder, keyInfo);
             } catch (err) {
                 this.logger.warn(`Can not find key information for folder: ${folder}`);
@@ -234,7 +243,7 @@ export default class KeyStatusManager {
         this.updateFunctions.push(update);
     }
 
-    getCurrentKey(): gpg.GpgKeyInfo | undefined {
+    getCurrentKey(): KeyRecord | undefined {
         const currentKey = this.activateFolder ? this.keyOfFolders.get(this.activateFolder) : undefined;
         if (!currentKey) {
             return undefined;
@@ -246,20 +255,20 @@ export default class KeyStatusManager {
     // Lock or unlock current key
     async unlockCurrentKey(passphrase: string): Promise<void> {
         if (this.activateFolder === undefined) {
-            throw new Error(vscode.l10n.t(m['noActiveFolder']));
+            throw new Error(l10n.t(m['noActiveFolder']));
         }
 
         if (this.currentKey === undefined) {
-            throw new Error(vscode.l10n.t(m['noKeyForCurrentFolder']));
+            throw new Error(l10n.t(m['noKeyForCurrentFolder']));
         }
 
-        if (await gpg.isKeyUnlocked(this.currentKey.keygrip)) {
+        if (await isKeyUnlocked(this.env, this.currentKey.grip)) {
             this.logger.warn(`Key is already unlocked, skip unlock request`);
             return;
         }
 
         this.logger.info(`Try to unlock current key: ${this.currentKey.fingerprint}`);
-        await gpg.unlockByKey(this.logger, this.currentKey.keygrip, passphrase);
+        await unlockByKey(this.env, this.logger, this.currentKey.grip, passphrase);
     }
 
     // Stop sync key status loop
