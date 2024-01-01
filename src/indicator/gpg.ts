@@ -183,6 +183,16 @@ export async function getKeyInfos(): Promise<KeyRecord[]> {
 }
 
 /**
+ * Executes `process.textSpawn` in a cross-platform compatible manner.
+ */
+async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], input: string = ''): Promise<string> {
+    const target = cmd + (env == 'linux' ? '' : '.exe');
+    const result: string = await process.textSpawn(target, args, input);
+    return result;
+}
+
+
+/**
  * Asks the current GPG agent whether the specified key `keygrip` is unlocked.
  *
  * @returns Promise<boolean>
