@@ -240,7 +240,7 @@ export async function isKeyUnlocked(keygrip: string): Promise<boolean> {
  * @param keyInfos - If caller already had the cache, the cache should be passed to avoid duplicated `getKeyInfos()`
  * @returns key information
  */
-export async function getKeyInfo(keyId: string, keyInfos?: GpgKeyInfo[]): Promise<GpgKeyInfo> {
+export async function getKeyInfo(keyId: string, keyInfos?: KeyRecord[]): Promise<KeyRecord> {
     for (let info of (Array.isArray(keyInfos) ? keyInfos : await getKeyInfos())) {
         // GPG signing key is usually given as shorter ID
         if (info.fingerprint.includes(keyId)) {
