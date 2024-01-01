@@ -128,7 +128,7 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked after trying
      */
-    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: GpgKeyInfo): Promise<boolean> {
+    private async tryUnlockWithCache(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
         const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
         if (isUnlocked) {
             return true;
@@ -168,7 +168,7 @@ export default class KeyStatusManager {
      * @param keyInfo - the key to be unlocked, if required.
      * @returns whether the key is unlocked
      */
-    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: GpgKeyInfo): Promise<boolean> {
+    private async showInfoOnly(isChanged: boolean, isUnlockedPrev: boolean, keyInfo: KeyRecord): Promise<boolean> {
         const isUnlocked = await gpg.isKeyUnlocked(keyInfo.keygrip);
         if (isUnlockedPrev && !isUnlocked) {
             this.show(isChanged, m['keyChanged'], m['keyRelocked']);
