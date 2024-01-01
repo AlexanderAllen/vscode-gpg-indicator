@@ -15,6 +15,12 @@ export class KeyStatusEvent {
     }
 }
 
+enum binaryHostConfig {
+    LINUX = 'linux',
+    WINDOWS = 'windows'
+}
+
+
 export default class KeyStatusManager {
     private updateFolderLock: Mutex;
     private syncStatusLock: Mutex;
@@ -50,7 +56,7 @@ export default class KeyStatusManager {
         this.env =
             workspace.
             getConfiguration('gpgIndicator').
-            get<binaryHostConfig>('binaryHost', 'linux');
+            get<binaryHostConfig>('binaryHost', binaryHostConfig.LINUX);
     }
 
     async syncLoop(): Promise<void> {
