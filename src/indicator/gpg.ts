@@ -1,6 +1,7 @@
 import * as process from './process';
 import * as assuan from './assuan';
 import type { Logger } from './logger';
+import { binaryHostConfig } from '../common';
 
 /**
  * Get the path of socket file for communication with GPG agent.
@@ -202,14 +203,11 @@ export function parseKeyRecords(rawText: string): Array<KeyRecord> {
  *
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
-export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
+export async function getKeyInfos(): Promise<KeyRecord[]> {
     // @todo @AlexanderAllen issue #8: config option for executable.
     const gpgOutput: string = await process.textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
-
-    const identities = parseIdentities(gpgOutput);
     const records = parseKeyRecords(gpgOutput);
-
-    return parseGpgKey(gpgOutput);
+    return records;
 }
 
 /**
