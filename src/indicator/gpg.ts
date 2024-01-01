@@ -4,6 +4,43 @@ import type { Logger } from './logger';
 import { binaryHostConfig } from '../common';
 
 /**
+ * Immutable GPG record representation.
+ */
+export class KeyRecord {
+    constructor(
+      public readonly KeyRecordType: string = '',
+      public readonly fieldKeyType: string= '',
+      public readonly fieldKeyStatus: string = '',
+      public readonly fieldLength: string = '',
+      public readonly fieldPubKeyAlgo: string = '',
+      public readonly fieldKeyID: string = '',
+      public readonly fieldCreated: string = '',
+      public readonly fieldExpires: string = '',
+      public readonly fieldTrust: string = '',
+      public readonly fieldOwnerTrust: string = '',
+      public readonly fieldUserID: string = '',
+      public readonly fieldSigClass: string = '',
+      public readonly fieldCapability: string = '',
+      public readonly fieldCurveName: string = '',
+      public readonly fieldRest: string = '',
+
+      public readonly FingerprintRecordType: string = '',
+      public readonly fingerprint: string = '',
+
+      public readonly GripRecordType: string = '',
+      public readonly grip: string = '',
+
+      public readonly IdentityRecordType: string = '',
+      public readonly fieldIdentityStatus: string = '',
+      public readonly fieldIdentityCreated: string = '',
+      public readonly fieldIdentityID: string = '',
+      public readonly fieldIdentityComment: string = '',
+      public readonly fieldIdentityRest: string = '',
+      public readonly userId: string = '',
+    ) {}
+}
+
+/**
  * Executes `process.textSpawn` in a cross-platform compatible manner.
  */
 async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], input: string = ''): Promise<string> {
@@ -107,44 +144,6 @@ function parseIdentities(rawText: string): Array<IdentityRecord> {
     }
     return identities;
 }
-
-/**
- * Immutable GPG record representation.
- */
-export class KeyRecord {
-    constructor(
-      public readonly KeyRecordType: string = '',
-      public readonly fieldKeyType: string= '',
-      public readonly fieldKeyStatus: string = '',
-      public readonly fieldLength: string = '',
-      public readonly fieldPubKeyAlgo: string = '',
-      public readonly fieldKeyID: string = '',
-      public readonly fieldCreated: string = '',
-      public readonly fieldExpires: string = '',
-      public readonly fieldTrust: string = '',
-      public readonly fieldOwnerTrust: string = '',
-      public readonly fieldUserID: string = '',
-      public readonly fieldSigClass: string = '',
-      public readonly fieldCapability: string = '',
-      public readonly fieldCurveName: string = '',
-      public readonly fieldRest: string = '',
-
-      public readonly FingerprintRecordType: string = '',
-      public readonly fingerprint: string = '',
-
-      public readonly GripRecordType: string = '',
-      public readonly grip: string = '',
-
-      public readonly IdentityRecordType: string = '',
-      public readonly fieldIdentityStatus: string = '',
-      public readonly fieldIdentityCreated: string = '',
-      public readonly fieldIdentityID: string = '',
-      public readonly fieldIdentityComment: string = '',
-      public readonly fieldIdentityRest: string = '',
-      public readonly userId: string = '',
-    ) {}
-}
-
 
 /**
  * Parse GPG record fields usign a regular expression.
