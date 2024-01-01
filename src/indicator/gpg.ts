@@ -127,22 +127,61 @@ function parseIdentities(rawText: string): Array<IdentityRecord> {
 }
 
 /**
+ * Represents a parsed GPG key record.
+ */
+export class KeyRecord {
+    constructor(
+      public readonly KeyRecordType: string = '',
+      public readonly fieldKeyType: string= '',
+      public readonly fieldKeyStatus: string = '',
+      public readonly fieldLength: string = '',
+      public readonly fieldPubKeyAlgo: string = '',
+      public readonly fieldKeyID: string = '',
+      public readonly fieldCreated: string = '',
+      public readonly fieldExpires: string = '',
+      public readonly fieldTrust: string = '',
+      public readonly fieldOwnerTrust: string = '',
+      public readonly fieldUserID: string = '',
+      public readonly fieldSigClass: string = '',
+      public readonly fieldCapability: string = '',
+      public readonly fieldCurveName: string = '',
+      public readonly fieldRest: string = '',
+
+      public readonly FingerprintRecordType: string = '',
+      public readonly fingerprint: string = '',
+
+      public readonly GripRecordType: string = '',
+      public readonly grip: string = '',
+
+      public readonly IdentityRecordType: string = '',
+      public readonly fieldIdentityStatus: string = '',
+      public readonly fieldIdentityCreated: string = '',
+      public readonly fieldIdentityID: string = '',
+      public readonly fieldIdentityComment: string = '',
+      public readonly fieldIdentityRest: string = '',
+    ) {}
+}
+
+
+/**
  * Parse GPG record fields usign a regular expression.
  *
  * @param rawText Raw GPG output.
  *
  * @returns [] Array of parsed GPG records.
  */
-export function parseKeyRecords(rawText: string) {
+export function parseKeyRecords(rawText: string): Array<KeyRecord> {
+    // GpgRecordType
 
     const recordPattern = /(?<KeyRecordType>(?<fieldKeyType>pub|sub):(?<fieldKeyStatus>[^:]*):(?<fieldLength>[^:]*):(?<fieldPubKeyAlgo>[^:]*):(?<fieldKeyID>[^:]*):(?<fieldCreated>[^:]*):(?<fieldExpires>[^:]*):(?<fieldTrust>[^:]*):(?<fieldOwnerTrust>[^:]*):(?<fieldUserID>[^:]*):(?<fieldSigClass>[^:]*):(?<fieldCapability>[escaD?]+)\w*:(?:[^:]*:){4}(?<fieldCurveName>[^:]*):(?<fieldRest>[:\d]*)(?:\r\n|\n))(?<FingerprintRecordType>(?:fpr|fp2):(?:[^:]*:){8}(?<fingerprint>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<GripRecordType>grp:(?:[^:]*:){8}(?<grip>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)(\r\n|\n))*/mg;
     let matchedIdentities;
-    const identities = [];
+    const records: Array<KeyRecord> = [];
 
     while ((matchedIdentities = recordPattern.exec(rawText)) !== null) {
-        identities.push(matchedIdentities?.groups);
+        const record: KeyRecord = Object.assign(new KeyRecord(), matchedIdentities.groups);
+        records.push(record);
     }
-    return identities;
+    return records;
 }
 
 /**
@@ -158,7 +197,8 @@ export function parseKeyRecords(rawText: string) {
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
 export async function getKeyInfos(): Promise<GpgKeyInfo[]> {
-    const gpgOutput: string = await process.textSpawn('gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+    // @todo @AlexanderAllen issue #8: config option for executable.
+    const gpgOutput: string = await process.textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
 
     const identities = parseIdentities(gpgOutput);
     const records = parseKeyRecords(gpgOutput);
