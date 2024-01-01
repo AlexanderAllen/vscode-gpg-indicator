@@ -80,8 +80,8 @@
             "properties": {
                 "gpgIndicator.statusRefreshInterval": {
                     "type": "number",
-                    "default": 30,
-                    "minimum": 1,
+                    "default": 60,
+                    "minimum": 15,
                     "markdownDescription": "%gpgIndicator.l10n.configuration.statusRefreshInterval%"
                 },
                 "gpgIndicator.outputLogLevel": {
