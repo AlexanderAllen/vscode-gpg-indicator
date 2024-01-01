@@ -4,6 +4,15 @@ import type { Logger } from './logger';
 import { binaryHostConfig } from '../common';
 
 /**
+ * Executes `process.textSpawn` in a cross-platform compatible manner.
+ */
+async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], input: string = ''): Promise<string> {
+    const target = cmd + (env == 'linux' ? '' : '.exe');
+    const result: string = await process.textSpawn(target, args, input);
+    return result;
+}
+
+/**
  * Get the path of socket file for communication with GPG agent.
  *
  * @returns The path of desired GPG agent socket.
@@ -100,7 +109,7 @@ function parseIdentities(rawText: string): Array<IdentityRecord> {
 }
 
 /**
- * Represents a parsed GPG key record.
+ * Immutable GPG record representation.
  */
 export class KeyRecord {
     constructor(
@@ -149,8 +158,6 @@ export class KeyRecord {
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
 export function parseKeyRecords(rawText: string): Array<KeyRecord> {
-    // GpgRecordType
-
     const recordPattern = /(?<KeyRecordType>(?<fieldKeyType>pub|sub):(?<fieldKeyStatus>[^:]*):(?<fieldLength>[^:]*):(?<fieldPubKeyAlgo>[^:]*):(?<fieldKeyID>[^:]*):(?<fieldCreated>[^:]*):(?<fieldExpires>[^:]*):(?<fieldTrust>[^:]*):(?<fieldOwnerTrust>[^:]*):(?<fieldUserID>[^:]*):(?<fieldSigClass>[^:]*):(?<fieldCapability>[escaD?]+)\w*:(?:[^:]*:){4}(?<fieldCurveName>[^:]*):(?<fieldRest>[:\d]*)(?:\r\n|\n))(?<FingerprintRecordType>(?:fpr|fp2):(?:[^:]*:){8}(?<fingerprint>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<GripRecordType>grp:(?:[^:]*:){8}(?<grip>\w*):(?:[^:]*:)*?(?:\r\n|\n))(?<IdentityRecordType>uid:(?=u)(?<fieldIdentityStatus>[^:]):(?:[^:]*):{3}(?<fieldIdentityCreated>[^:]*)(?:[^:]*):{2}(?<fieldIdentityID>[^:]*)(?:[^:]*):{2}(?<fieldIdentityComment>[^:]*):(?<fieldIdentityRest>[:\d]*)(\r\n|\n))*/mg;
     let matchedIdentities;
     const records: Array<KeyRecord> = [];
@@ -180,21 +187,10 @@ export function parseKeyRecords(rawText: string): Array<KeyRecord> {
  * @see https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob_plain;f=doc/DETAILS
  */
 export async function getKeyInfos(env: binaryHostConfig): Promise<KeyRecord[]> {
-    // @todo @AlexanderAllen issue #8: config option for executable.
-    const gpgOutput: string = await process.textSpawn('gpg.exe', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
+    const gpgOutput = await exec(env, 'gpg', ['--fingerprint', '--fingerprint', '--with-keygrip', '--with-colon'], '');
     const records = parseKeyRecords(gpgOutput);
     return records;
 }
-
-/**
- * Executes `process.textSpawn` in a cross-platform compatible manner.
- */
-async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], input: string = ''): Promise<string> {
-    const target = cmd + (env == 'linux' ? '' : '.exe');
-    const result: string = await process.textSpawn(target, args, input);
-    return result;
-}
-
 
 /**
  * Asks the current GPG agent whether the specified key `keygrip` is unlocked.
@@ -203,7 +199,6 @@ async function exec(env: binaryHostConfig, cmd: string, args: string[] = [], inp
  *   Whether the key is unlocked or not.
  */
 export async function isKeyUnlocked(env: binaryHostConfig, keygrip: string): Promise<boolean> {
-
     const outputs = await exec(env, 'gpg-connect-agent', [], `KEYINFO ${keygrip}`);
 
     const lines = outputs.split(env == 'linux' ? '\n' : '\r\n');
